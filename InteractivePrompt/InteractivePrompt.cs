@@ -30,7 +30,6 @@ namespace Cintio
         {
             _prompt = prompt;
             Console.WriteLine(startupMsg);
-            List<string> cmdHistory = new List<string>();
             List<List<char>> inputHistory = new List<List<char>>();
             while (true)
             {
