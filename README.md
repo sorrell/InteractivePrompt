@@ -1,6 +1,6 @@
 # InteractivePrompt
 
-This is a very small library to help implement your own REPL.  
+This is a very small library to help implement your own REPL. It features a command history with use of the up/down arrows, and ability to edit previous entries.
 
 ![image](http://cint.io/interactiveprompt.gif)
 
