@@ -12,7 +12,7 @@ namespace Cintio
         private static void ClearLine(List<char> input)
         {
             Console.SetCursorPosition(_prompt.Length, Console.CursorTop);
-            Console.Write(new string(' ', input.Count + 2));
+            Console.Write(new string(' ', input.Count + 5));
         }
         private static void RewriteLine(List<char> input, int inputPosition)
         {
@@ -39,7 +39,7 @@ namespace Cintio
                 int inputHistoryPosition = inputHistory.Count;
 
                 ConsoleKeyInfo key;
-                Console.Write("\r{0}", prompt);
+                Console.Write(prompt);
                 do
                 {
                     key = Console.ReadKey(true);
