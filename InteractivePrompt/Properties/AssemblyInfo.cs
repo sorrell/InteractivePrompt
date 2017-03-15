@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("InteractivePrompt")]
-[assembly: AssemblyDescription("A repl for Console apps")]
+[assembly: AssemblyDescription("A REPL for building advanced Console apps, with a session command history via up/down arrows.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Cintio Ltd.")]
 [assembly: AssemblyProduct("InteractivePrompt")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.1.0")]
-[assembly: AssemblyFileVersion("1.0.1.0")]
+[assembly: AssemblyVersion("1.0.2.0")]
+[assembly: AssemblyFileVersion("1.0.2.0")]
