@@ -10,7 +10,7 @@ Add the library from NuGet, or simply extend what's in this repo.
 ## Example
 The gif above is based on the code below.  Simply provide the prompt, startup message, and function to handle the input, and you're off!
 
-```
+```c#
 static void Main(string[] args)
 {
     var prompt = "cool> ";
