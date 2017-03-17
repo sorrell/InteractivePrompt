@@ -9,6 +9,7 @@ This is a very small library to help implement your own REPL. It features a comm
 - Word completion via Tab button (you provide the `List<string>`)
 - Command history (up / down arrows)
 - Standard shell navigation (left/right, Home/End, Ctrl+E, [Ctrl+H was subbed for Ctrl+A], Esc)
+- Cross-platform: no Windows specific code
 - Fast, ready-to-go REPL
 
 ## Installation
