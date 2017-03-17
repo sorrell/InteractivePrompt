@@ -4,6 +4,13 @@ This is a very small library to help implement your own REPL. It features a comm
 
 ![image](http://cint.io/interactiveprompt.gif)
 
+## Features
+
+- Word completion via Tab button (you provide the `List<string>`)
+- Command history (up / down arrows)
+- Standard shell navigation (left/right, Home/End, Ctrl+E, [Ctrl+H was subbed for Ctrl+A], Esc)
+- Fast, ready-to-go REPL
+
 ## Installation
 Add the library from NuGet, or simply extend what's in this repo.
 
@@ -15,13 +22,21 @@ static void Main(string[] args)
 {
     var prompt = "cool> ";
     var startupMsg = "Welcome to my interactive Prompt!";
+    List<string> completionList = new List<string> { "contracts", "contractearnings", "cancels", "cancellationInfo", "cantankerous" };
     InteractivePrompt.Run(
         ((strCmd, listCmd) =>
         {
             var handleInput = "(((--> " + strCmd + " <--)))";
             return handleInput + Environment.NewLine;
-        }), prompt, startupMsg);
+        }), prompt, startupMsg, completionList);
 }
 ```
+## Word Completion
+
+The code example above will also give you the ability to tab through the provided list, as seen below.
+
+![image](http://cint.io/codecompletion.gif)
+
+
 ## How it's done
 Some very simple usage of `Cursor` position and rewriting the current line allows us to create an editable command history.
