@@ -1,6 +1,6 @@
 # InteractivePrompt
 
-This is a very small library to help implement your own REPL. It features a command history with use of the up/down arrows, and ability to edit previous entries. The standard console doesn't provide enough functionality, and this solution provides a better way to create a fast repl / user input dialog.
+This is a very small library to help implement your own REPL. It features a command history with use of the up/down arrows, word completion via tab, and ability to edit previous entries. The standard console doesn't provide enough functionality, and this solution provides a better way to create a fast repl / user input dialog.
 
 ![image](http://cint.io/interactiveprompt.gif)
 
