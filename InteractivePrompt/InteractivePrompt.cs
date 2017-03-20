@@ -10,6 +10,8 @@ namespace Cintio
     public static class InteractivePrompt
     {
         private static string _prompt;
+        private static int startingCursorLeft;
+        private static int startingCursorTop;
         private static void ClearLine(List<char> input)
         {
             Console.SetCursorPosition(_prompt.Length, Console.CursorTop);
@@ -17,9 +19,21 @@ namespace Cintio
         }
         private static void RewriteLine(List<char> input, int inputPosition)
         {
-            Console.SetCursorPosition(_prompt.Length, Console.CursorTop);
+            Console.SetCursorPosition(startingCursorLeft, startingCursorTop);
+            int cursorTop = startingCursorTop;
+            if (inputPosition + _prompt.Length > Console.BufferWidth -1)
+            {
+                //if (Console.CursorTop == startingCursorTop)
+                //    cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
+                //else
+                    cursorTop += (inputPosition) / Console.BufferWidth;
+            }
+            else if (inputPosition + _prompt.Length > Console.BufferWidth-1 && Console.CursorTop != startingCursorTop)
+            {
+                Console.WriteLine(cursorTop.ToString(), startingCursorTop, Console.CursorTop);
+            }
             Console.Write(String.Concat(input));
-            Console.SetCursorPosition(inputPosition + _prompt.Length, Console.CursorTop);
+            Console.SetCursorPosition((inputPosition + _prompt.Length) % Console.BufferWidth, cursorTop);
         }
         private static IEnumerable<string> GetMatch(List<string> s, string input)
         {
@@ -28,23 +42,50 @@ namespace Cintio
                 if (Regex.IsMatch(s[i], ".*(?:" + input + ").*", RegexOptions.IgnoreCase))
                     yield return s[i];
         }
+
+        static Tuple<int, int> HandleMoveLeft()
+        {
+            int cursorLeftPosition = Console.CursorLeft - 1;
+            int cursorTopPosition = Console.CursorTop;
+            if (Console.CursorLeft - 1 == 0)
+            {
+                cursorLeftPosition = Console.BufferWidth - 1;
+                cursorTopPosition = Console.CursorTop - 1;
+            }
+            return Tuple.Create(cursorLeftPosition, cursorTopPosition);
+        }
+
+        static Tuple<int, int> HandleMoveRight()
+        {
+            int cursorLeftPosition = Console.CursorLeft + 1;
+            int cursorTopPosition = Console.CursorTop;
+            if (Console.CursorLeft + 1 >= Console.BufferWidth)
+            {
+                cursorLeftPosition = 0;
+                cursorTopPosition = Console.CursorTop + 1;
+            }
+            return Tuple.Create(cursorLeftPosition, cursorTopPosition);
+        }
+
         /// <summary>
         /// Run will start an interactive prompt
         /// </summary>
         /// <param name="lambda">This func is provided for the user to handle the input.  Input is provided in both string and List&lt;char&gt;. A return response is provided as a string.</param>
         /// <param name="prompt">The prompt for the interactive shell</param>
         /// <param name="startupMsg">Startup msg to display to user</param>
-        public static void Run(Func<string, List<char>, string> lambda, string prompt, string startupMsg, List<string> completionList = null)
+        public static void Run(Func<string, List<char>, List<string>, string> lambda, string prompt, string startupMsg, List<string> completionList = null)
         {
             _prompt = prompt;
             Console.WriteLine(startupMsg);
             List<List<char>> inputHistory = new List<List<char>>();
             IEnumerator<string> wordIterator = null;
-            
+
             while (true)
             {
                 string completion = null;
                 List<char> input = new List<char>();
+                startingCursorLeft = _prompt.Length;
+                startingCursorTop = Console.CursorTop;
                 int inputPosition = 0;
                 int inputHistoryPosition = inputHistory.Count;
 
@@ -58,7 +99,8 @@ namespace Cintio
                         if (inputPosition > 0)
                         {
                             inputPosition--;
-                            Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                            var pos = HandleMoveLeft();
+                            Console.SetCursorPosition(pos.Item1, pos.Item2);
                         }
                     }
                     else if (key.Key == ConsoleKey.RightArrow)
@@ -66,7 +108,8 @@ namespace Cintio
                         if (inputPosition < input.Count)
                         {
                             inputPosition++;
-                            Console.SetCursorPosition(Console.CursorLeft + 1, Console.CursorTop);
+                            var pos = HandleMoveRight();
+                            Console.SetCursorPosition(pos.Item1, pos.Item2);
                         }
                     }
 
@@ -123,15 +166,21 @@ namespace Cintio
                     }
                     else if (key.Key == ConsoleKey.Home || (key.Key == ConsoleKey.H && key.Modifiers == ConsoleModifiers.Control))
                     {
-                        Console.WriteLine("crap");
                         inputPosition = 0;
-                        Console.SetCursorPosition(prompt.Length, Console.CursorTop);
+                        Console.SetCursorPosition(prompt.Length, startingCursorTop);
                     }
 
                     else if (key.Key == ConsoleKey.End || (key.Key == ConsoleKey.E && key.Modifiers == ConsoleModifiers.Control))
                     {
                         inputPosition = input.Count;
-                        Console.SetCursorPosition(inputPosition + _prompt.Length, Console.CursorTop);
+                        var cursorLeft = 0;
+                        int cursorTop = startingCursorTop;
+                        if ((inputPosition + _prompt.Length) / Console.BufferWidth > 0)
+                        {
+                            cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
+                            cursorLeft = (inputPosition + _prompt.Length) % Console.BufferWidth;
+                        }
+                        Console.SetCursorPosition(cursorLeft, cursorTop);
                     }
 
                     else if (key.Key == ConsoleKey.Delete)
@@ -203,7 +252,6 @@ namespace Cintio
                         RewriteLine(input, inputPosition);
                     }
 
-
                     lastKey = key;
                 } while (key.Key != ConsoleKey.Enter);
 
@@ -218,7 +266,7 @@ namespace Cintio
                 if (!inputHistory.Contains(input))
                     inputHistory.Add(input);
 
-                Console.Write(lambda(cmd, input));
+                Console.Write(lambda(cmd, input, completionList));
 
             }
         }
