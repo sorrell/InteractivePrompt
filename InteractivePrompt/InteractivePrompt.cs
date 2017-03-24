@@ -30,6 +30,29 @@ namespace Cintio
             }
             return currentLine;
         }
+        /// <summary>
+        /// Gets the cursor position relative to the current line it is on
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="inputPosition"></param>
+        /// <returns></returns>
+        private static Tuple<int,int> GetCursorRelativePosition(List<char> input, int inputPosition)
+        {
+            int currentPos = 0;
+            int currentLine = 0;
+            for (int i = 0; i < input.Count; i++)
+            {
+                if (input[i] == '\n')
+                {
+                    currentLine += 1;
+                    currentPos = 0;
+                }
+                if (i == inputPosition)
+                    break;
+                currentPos++;
+            }
+            return Tuple.Create(currentPos, currentLine);
+        }
         private static int mod(int x, int m)
         {
             return (x % m + m) % m;
@@ -43,18 +66,22 @@ namespace Cintio
         private static void RewriteLine(List<char> input, int inputPosition)
         {
             Console.SetCursorPosition(startingCursorLeft, startingCursorTop);
+            var coords = GetCursorRelativePosition(input, inputPosition);
             int cursorTop = startingCursorTop;
-            int cursorLeft = inputPosition;
+            int cursorLeft = 0;
             if (GetCurrentLineForInput(input, inputPosition) == 0)
             {
                 cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
-                cursorLeft += _prompt.Length;
+                cursorLeft = inputPosition + _prompt.Length;
             }
             else
-                cursorTop += (inputPosition) / Console.BufferWidth + input.Where(a => a == '\n').Count();
+            {
+                cursorTop += coords.Item2; //(inputPosition) / Console.BufferWidth + input.Where(a => a == '\n').Count();
+                cursorLeft = coords.Item1 - 1;
+            }
             
             Console.Write(String.Concat(input));
-            Console.SetCursorPosition(cursorLeft % Console.BufferWidth, cursorTop);
+            Console.SetCursorPosition(mod(cursorLeft,Console.BufferWidth), cursorTop);
         }
         private static IEnumerable<string> GetMatch(List<string> s, string input)
         {
@@ -72,19 +99,22 @@ namespace Cintio
             }
         }
 
-        static Tuple<int, int> HandleMoveLeft()
+        static Tuple<int, int> HandleMoveLeft(List<char> input, int inputPosition)
         {
-            int cursorLeftPosition = Console.CursorLeft - 1;
+            var coords = GetCursorRelativePosition(input, inputPosition);
+            int cursorLeftPosition = coords.Item1;
             int cursorTopPosition = Console.CursorTop;
-            if (Console.CursorLeft - 1 == 0)
-            {
-                cursorLeftPosition = Console.BufferWidth - 1;
+
+            if (GetCurrentLineForInput(input, inputPosition) == 0)
+                cursorLeftPosition = (coords.Item1 + _prompt.Length) % Console.BufferWidth ;
+
+            if (Console.CursorLeft == 0)
                 cursorTopPosition = Console.CursorTop - 1;
-            }
+            
             return Tuple.Create(cursorLeftPosition, cursorTopPosition);
         }
 
-        static Tuple<int, int> HandleMoveRight()
+        static Tuple<int, int> HandleMoveRight(List<char> input, int inputPosition)
         {
             int cursorLeftPosition = Console.CursorLeft + 1;
             int cursorTopPosition = Console.CursorTop;
@@ -128,7 +158,7 @@ namespace Cintio
                         if (inputPosition > 0)
                         {
                             inputPosition--;
-                            var pos = HandleMoveLeft();
+                            var pos = HandleMoveLeft(input, inputPosition);
                             Console.SetCursorPosition(pos.Item1, pos.Item2);
                         }
                     }
@@ -137,7 +167,7 @@ namespace Cintio
                         if (inputPosition < input.Count)
                         {
                             inputPosition++;
-                            var pos = HandleMoveRight();
+                            var pos = HandleMoveRight(input, inputPosition);
                             Console.SetCursorPosition(pos.Item1, pos.Item2);
                         }
                     }
@@ -276,6 +306,7 @@ namespace Cintio
                     }
 
                     //TODO: implement multiline
+                    // NPS - handled MoveLeft, now need MoveRight for multiline
                     else if (key.Key == ConsoleKey.Enter && key.Modifiers == ConsoleModifiers.Shift)
                     {
                         input.Insert(inputPosition++, '\n');
@@ -291,6 +322,7 @@ namespace Cintio
                     lastKey = key;
                 } while (!(key.Key == ConsoleKey.Enter) || (key.Key == ConsoleKey.Enter && key.Modifiers == ConsoleModifiers.Shift));
 
+                Console.SetCursorPosition(prompt.Length, startingCursorTop + input.Where(a => a == '\n').Count());
                 Console.WriteLine();
                 Console.SetCursorPosition(prompt.Length, Console.CursorTop);
 
