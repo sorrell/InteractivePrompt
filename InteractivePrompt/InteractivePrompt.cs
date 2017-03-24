@@ -12,35 +12,64 @@ namespace Cintio
         private static string _prompt;
         private static int startingCursorLeft;
         private static int startingCursorTop;
-        private static void ClearLine(List<char> input)
+        private static ConsoleKeyInfo key, lastKey;
+
+        private static bool InputIsOnNewLine(List<char> input, int inputPosition)
         {
-            Console.SetCursorPosition(_prompt.Length, Console.CursorTop);
+            return (inputPosition + _prompt.Length > Console.BufferWidth - 1);
+        }
+        private static int GetCurrentLineForInput(List<char> input, int inputPosition)
+        {
+            int currentLine = 0;
+            for (int i = 0; i < input.Count; i++)
+            {
+                if (input[i] == '\n')
+                    currentLine += 1;
+                if (i == inputPosition)
+                    break;
+            }
+            return currentLine;
+        }
+        private static int mod(int x, int m)
+        {
+            return (x % m + m) % m;
+        }
+        private static void ClearLine(List<char> input, int inputPosition)
+        {
+            int cursorLeft = InputIsOnNewLine(input, inputPosition) ? 0 : _prompt.Length;
+            Console.SetCursorPosition(cursorLeft, Console.CursorTop);
             Console.Write(new string(' ', input.Count + 5));
         }
         private static void RewriteLine(List<char> input, int inputPosition)
         {
             Console.SetCursorPosition(startingCursorLeft, startingCursorTop);
             int cursorTop = startingCursorTop;
-            if (inputPosition + _prompt.Length > Console.BufferWidth -1)
+            int cursorLeft = inputPosition;
+            if (GetCurrentLineForInput(input, inputPosition) == 0)
             {
-                //if (Console.CursorTop == startingCursorTop)
-                //    cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
-                //else
-                    cursorTop += (inputPosition) / Console.BufferWidth;
+                cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
+                cursorLeft += _prompt.Length;
             }
-            else if (inputPosition + _prompt.Length > Console.BufferWidth-1 && Console.CursorTop != startingCursorTop)
-            {
-                Console.WriteLine(cursorTop.ToString(), startingCursorTop, Console.CursorTop);
-            }
+            else
+                cursorTop += (inputPosition) / Console.BufferWidth + input.Where(a => a == '\n').Count();
+            
             Console.Write(String.Concat(input));
-            Console.SetCursorPosition((inputPosition + _prompt.Length) % Console.BufferWidth, cursorTop);
+            Console.SetCursorPosition(cursorLeft % Console.BufferWidth, cursorTop);
         }
         private static IEnumerable<string> GetMatch(List<string> s, string input)
         {
             s.Add(input);
-            for (int i = 0; i < s.Count; i = (i+1)%s.Count)
+            int direction = (key.Modifiers == ConsoleModifiers.Shift) ? -1 : 1;
+            for (int i = -1; i < s.Count; )
+            {
+                direction = (key.Modifiers == ConsoleModifiers.Shift) ? -1 : 1;
+                i = mod((i + direction), s.Count);
+
                 if (Regex.IsMatch(s[i], ".*(?:" + input + ").*", RegexOptions.IgnoreCase))
+                {
                     yield return s[i];
+                }
+            }
         }
 
         static Tuple<int, int> HandleMoveLeft()
@@ -89,7 +118,7 @@ namespace Cintio
                 int inputPosition = 0;
                 int inputHistoryPosition = inputHistory.Count;
 
-                ConsoleKeyInfo key, lastKey = new ConsoleKeyInfo();
+                key = lastKey = new ConsoleKeyInfo();
                 Console.Write(prompt);
                 do
                 {
@@ -125,7 +154,7 @@ namespace Cintio
                             wordIterator.MoveNext();
                             if (completion != null)
                             {
-                                ClearLine(input);
+                                ClearLine(input, inputPosition);
                                 for (var i = 0; i < completion.Length; i++)
                                 {
                                     input.RemoveAt(--inputPosition);
@@ -134,7 +163,7 @@ namespace Cintio
                             }
                             else
                             {
-                                ClearLine(input);
+                                ClearLine(input, inputPosition);
                                 for (var i = 0; i < string.Concat(word).Length; i++)
                                 {
                                     input.RemoveAt(--inputPosition);
@@ -144,7 +173,7 @@ namespace Cintio
                         }
                         else
                         {
-                            ClearLine(input);
+                            ClearLine(input, inputPosition);
                             for (var i = 0; i < string.Concat(word).Length; i++)
                             {
                                 input.RemoveAt(--inputPosition);
@@ -156,7 +185,7 @@ namespace Cintio
                         }
 
                         completion = wordIterator.Current;
-                        ClearLine(input);
+                        ClearLine(input, inputPosition);
                         foreach (var c in completion.ToCharArray())
                         {
                             input.Insert(inputPosition++, c);
@@ -188,7 +217,7 @@ namespace Cintio
                         if (inputPosition < input.Count)
                         {
                             input.RemoveAt(inputPosition);
-                            ClearLine(input);
+                            ClearLine(input, inputPosition);
                             RewriteLine(input, inputPosition);
                         }
                     }
@@ -198,7 +227,7 @@ namespace Cintio
                         if (inputHistoryPosition > 0)
                         {
                             inputHistoryPosition -= 1;
-                            ClearLine(input);
+                            ClearLine(input, inputPosition);
 
                             // ToList() so we make a copy and don't use the reference in the list
                             input = inputHistory[inputHistoryPosition].ToList();
@@ -211,7 +240,7 @@ namespace Cintio
                         if (inputHistoryPosition < inputHistory.Count - 1)
                         {
                             inputHistoryPosition += 1;
-                            ClearLine(input);
+                            ClearLine(input, inputPosition);
 
                             // ToList() so we make a copy and don't use the reference in the list
                             input = inputHistory[inputHistoryPosition].ToList();
@@ -221,7 +250,7 @@ namespace Cintio
                         else
                         {
                             inputHistoryPosition = inputHistory.Count;
-                            ClearLine(input);
+                            ClearLine(input, inputPosition);
                             Console.SetCursorPosition(prompt.Length, Console.CursorTop);
                             input = new List<char>();
                             inputPosition = 0;
@@ -233,7 +262,7 @@ namespace Cintio
                         {
                             inputPosition--;
                             input.RemoveAt(inputPosition);
-                            ClearLine(input);
+                            ClearLine(input, inputPosition);
                             RewriteLine(input, inputPosition);
                         }
                     }
@@ -246,6 +275,13 @@ namespace Cintio
                             Console.WriteLine("Press Escape again to exit.");
                     }
 
+                    //TODO: implement multiline
+                    else if (key.Key == ConsoleKey.Enter && key.Modifiers == ConsoleModifiers.Shift)
+                    {
+                        input.Insert(inputPosition++, '\n');
+                        RewriteLine(input, inputPosition);
+                    }
+
                     else if (key.Key != ConsoleKey.Enter)
                     {
                         input.Insert(inputPosition++, key.KeyChar);
@@ -253,7 +289,7 @@ namespace Cintio
                     }
 
                     lastKey = key;
-                } while (key.Key != ConsoleKey.Enter);
+                } while (!(key.Key == ConsoleKey.Enter) || (key.Key == ConsoleKey.Enter && key.Modifiers == ConsoleModifiers.Shift));
 
                 Console.WriteLine();
                 Console.SetCursorPosition(prompt.Length, Console.CursorTop);

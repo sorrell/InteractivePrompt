@@ -10,8 +10,8 @@
     <projectUrl>https://github.com/sorrell/InteractivePrompt</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/sorrell/InteractivePrompt/master/InteractivePrompt/Properties/InteractivePrompt.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>A REPL for Console Apps that features a command history, word completion, and basic shell nav.  Just add your own prompt, startup message, and callback for handling the user input.  More info at https://github.com/sorrell/InteractivePrompt</description>
-    <releaseNotes>Fixed target framework</releaseNotes>
+    <description>The RPL for your REPL. It's a REPL for Console Apps that features a command history, word completion, and basic shell nav.  Just add your own prompt, startup message, and callback for handling the user input.  More info at https://github.com/sorrell/InteractivePrompt</description>
+    <releaseNotes>Fixed crash when buffer carried into new line</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>Shell Repl Prompt Interactive</tags>
   </metadata>
