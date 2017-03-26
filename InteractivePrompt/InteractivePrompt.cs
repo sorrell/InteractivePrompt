@@ -311,7 +311,14 @@ namespace Cintio
                             Console.WriteLine("Press Escape again to exit.");
                     }
 
-                    else if (key.Key == ConsoleKey.Enter && key.Modifiers == ConsoleModifiers.Shift)
+                    else if (key.Key == ConsoleKey.Enter && (key.Modifiers == ConsoleModifiers.Shift || key.Modifiers == ConsoleModifiers.Alt))
+                    {
+                        input.Insert(inputPosition++, '\n');
+                        RewriteLine(input, inputPosition);
+                    }
+
+                    // multiline paste event
+                    else if (key.Key == ConsoleKey.Enter && Console.KeyAvailable == true)
                     {
                         input.Insert(inputPosition++, '\n');
                         RewriteLine(input, inputPosition);
@@ -319,12 +326,15 @@ namespace Cintio
 
                     else if (key.Key != ConsoleKey.Enter)
                     {
+
                         input.Insert(inputPosition++, key.KeyChar);
                         RewriteLine(input, inputPosition);
                     }
 
                     lastKey = key;
-                } while (!(key.Key == ConsoleKey.Enter) || (key.Key == ConsoleKey.Enter && key.Modifiers == ConsoleModifiers.Shift));
+                } while (!(key.Key == ConsoleKey.Enter && Console.KeyAvailable == false) 
+                    // If Console.KeyAvailable = true then we have a multiline paste event
+                    || (key.Key == ConsoleKey.Enter && (key.Modifiers == ConsoleModifiers.Shift || key.Modifiers == ConsoleModifiers.Alt)));
 
                 Console.SetCursorPosition(prompt.Length, startingCursorTop + input.Where(a => a == '\n').Count());
                 Console.WriteLine();
