@@ -69,25 +69,63 @@ namespace Cintio
             Console.SetCursorPosition(cursorLeft, Console.CursorTop);
             Console.Write(new string(' ', input.Count + 5));
         }
+
+        /// <summary>
+        /// A hacktastic way to scroll the buffer - WriteLine
+        /// </summary>
+        /// <param name="lines"></param>
+        private static void ScrollBuffer(int lines = 0)
+        {
+            for (int i = 0; i <= lines; i++)
+                Console.WriteLine("");
+            Console.SetCursorPosition(0, Console.CursorTop - lines);
+            startingCursorTop = Console.CursorTop - lines;
+        }
+
+        /// <summary>
+        /// RewriteLine will rewrite every character in the input List, and given the inputPosition
+        /// will determine whether or not to continue to the next line
+        /// </summary>
+        /// <param name="input">The input buffer</param>
+        /// <param name="inputPosition">Current character position in the List</param>
         private static void RewriteLine(List<char> input, int inputPosition)
         {
-            Console.SetCursorPosition(startingCursorLeft, startingCursorTop);
-            var coords = GetCursorRelativePosition(input, inputPosition);
-            int cursorTop = startingCursorTop;
-            int cursorLeft = 0;
-            if (GetCurrentLineForInput(input, inputPosition) == 0)
+            int cursorTop = 0;
+
+            try
             {
-                cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
-                cursorLeft = inputPosition + _prompt.Length;
+                Console.SetCursorPosition(startingCursorLeft, startingCursorTop);
+                var coords = GetCursorRelativePosition(input, inputPosition);
+                cursorTop = startingCursorTop;
+                int cursorLeft = 0;
+
+                if (GetCurrentLineForInput(input, inputPosition) == 0)
+                {
+                    cursorTop += (inputPosition + _prompt.Length) / Console.BufferWidth;
+                    cursorLeft = inputPosition + _prompt.Length;
+                }
+                else
+                {
+                    cursorTop += coords.Item2;
+                    cursorLeft = coords.Item1 - 1;
+                }
+
+                // if the new vertical cursor position is going to exceed the buffer height (i.e., we are
+                // at the bottom of console) then we need to scroll the buffer however much we are about to exceed by
+                if (cursorTop >= Console.BufferHeight)
+                {
+                    ScrollBuffer(cursorTop - Console.BufferHeight + 1);
+                    RewriteLine(input, inputPosition);
+                    return;
+                }
+
+                Console.Write(String.Concat(input));
+                Console.SetCursorPosition(mod(cursorLeft, Console.BufferWidth), cursorTop);
             }
-            else
+            catch (Exception e)
             {
-                cursorTop += coords.Item2; 
-                cursorLeft = coords.Item1 - 1;
+                Console.WriteLine(e.Message);
             }
-            
-            Console.Write(String.Concat(input));
-            Console.SetCursorPosition(mod(cursorLeft,Console.BufferWidth), cursorTop);
         }
         private static IEnumerable<string> GetMatch(List<string> s, string input)
         {
@@ -131,6 +169,11 @@ namespace Cintio
                 cursorTopPosition = Console.CursorTop + 1;
             }
             return Tuple.Create(cursorLeftPosition % Console.BufferWidth, cursorTopPosition);
+        }
+
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        {   
+            foreach (T item in source) { action(item); }
         }
 
         /// <summary>
@@ -330,14 +373,17 @@ namespace Cintio
                         input.Insert(inputPosition++, key.KeyChar);
                         RewriteLine(input, inputPosition);
                     }
-
+                    
                     lastKey = key;
                 } while (!(key.Key == ConsoleKey.Enter && Console.KeyAvailable == false) 
                     // If Console.KeyAvailable = true then we have a multiline paste event
                     || (key.Key == ConsoleKey.Enter && (key.Modifiers == ConsoleModifiers.Shift || key.Modifiers == ConsoleModifiers.Alt)));
 
-                Console.SetCursorPosition(prompt.Length, startingCursorTop + input.Where(a => a == '\n').Count());
-                Console.WriteLine();
+                int newlines = (input.Where(a => a == '\n').Count() > (input.Count / Console.BufferWidth))
+                             ? input.Where(a => a == '\n').Count()
+                             : (input.Count / Console.BufferWidth);
+                Console.SetCursorPosition(prompt.Length, startingCursorTop + newlines + 1);
+                Enumerable.Range(0, newlines).ForEach(x => Console.WriteLine());
                 Console.SetCursorPosition(prompt.Length, Console.CursorTop);
 
 
